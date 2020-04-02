@@ -18,7 +18,7 @@ namespace TelegramMidiBot.Classes
 		{
 			var t = new Thread(async () =>
 			{
-				await ExtractAudio("https://www.youtube.com/watch?v=do3d6mfUsWU");
+				await GetAudioURL("https://www.youtube.com/watch?v=do3d6mfUsWU");
 
 				var botClient = Bot.GetClient();
 
@@ -54,26 +54,45 @@ namespace TelegramMidiBot.Classes
 
 				await botClient.SendTextMessageAsync(
 				   chatId: e.Message.Chat,
-				   text: "Getting audio from video." 
+				   text: "Getting audio from video..." 
 				);
 
-				await ExtractAudio(url);
+				var audioUrl = await GetAudioURL(url);
+
+				if(audioUrl != null)
+				{
+					var rkm = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Download video audio", audioUrl));
+
+					await botClient.SendTextMessageAsync(
+					   chatId: e.Message.Chat,
+					   text: "Done.",
+					   replyMarkup: rkm
+					);
+				}
+				else
+				{
+					await botClient.SendTextMessageAsync(
+					   chatId: e.Message.Chat,
+					   text: "Failed =("
+					);
+				}
 			}
 		}
 
-		private static async Task ExtractAudio(string url)
+		private static async Task<string> GetAudioURL(string url)
 		{
 			var id = YoutubeClient.ParseVideoId(url);
 			var client = new YoutubeClient();
-			var converter = new YoutubeConverter(client);
 
 			var video = await client.GetVideoAsync(id);
 			var mediaStreamInfoSet = await client.GetVideoMediaStreamInfosAsync(id);
 			var audioStreamInfo = mediaStreamInfoSet.Audio.WithHighestBitrate();
 			var audio = mediaStreamInfoSet.Audio.Where(a => a.Container == Container.Mp4).OrderBy(a => a.Bitrate).FirstOrDefault();
 
-			var output = Environment.CurrentDirectory.Replace('\\', '/') + "/audio.mp4";
-			await client.DownloadMediaStreamAsync(audio, output);
+			return audio.Url;
+
+			//var output = Environment.CurrentDirectory.Replace('\\', '/') + "/audio.mp4";
+			//await client.DownloadMediaStreamAsync(audio, output);
 			//var mediaStreamInfos = new MediaStreamInfo[] { audio };
 			//await converter.DownloadAndProcessMediaStreamsAsync(mediaStreamInfos, output, "mp3");
 		}

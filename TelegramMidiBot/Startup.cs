@@ -53,7 +53,7 @@ namespace TelegramMidiBot
 					pattern: "{controller=Home}/{action=Index}/{id?}");
 			});
 
-			//BotYoutube.StartBot();
+			BotYoutube.StartBot();
 			BotCmd.StartBot();
 		}
 	}
