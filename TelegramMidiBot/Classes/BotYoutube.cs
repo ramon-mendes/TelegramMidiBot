@@ -8,7 +8,7 @@ using Telegram.Bot.Args;
 using Telegram.Bot.Types.ReplyMarkups;
 using YoutubeExplode;
 using YoutubeExplode.Converter;
-using YoutubeExplode.Models.MediaStreams;
+using YoutubeExplode.Videos.Streams;
 
 namespace TelegramMidiBot.Classes
 {
@@ -81,13 +81,11 @@ namespace TelegramMidiBot.Classes
 
 		private static async Task<string> GetAudioURL(string url)
 		{
-			var id = YoutubeClient.ParseVideoId(url);
 			var client = new YoutubeClient();
 
-			var video = await client.GetVideoAsync(id);
-			var mediaStreamInfoSet = await client.GetVideoMediaStreamInfosAsync(id);
-			var audioStreamInfo = mediaStreamInfoSet.Audio.WithHighestBitrate();
-			var audio = mediaStreamInfoSet.Audio.Where(a => a.Container == Container.Mp4).OrderBy(a => a.Bitrate).FirstOrDefault();
+			var video = await client.Videos.GetAsync(url);
+			var manifest = await client.Videos.Streams.GetManifestAsync(video.Id);
+			var audio = manifest.GetAudioOnly().WithHighestBitrate();
 
 			return audio.Url;
 
